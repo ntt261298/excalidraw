@@ -85,6 +85,7 @@ interface LayerUIProps {
   library: Library;
   id: string;
   onImageAction: (data: { insertOnCanvasDirectly: boolean }) => void;
+  onMathAction: () => void;
   renderWelcomeScreen: boolean;
   children?: React.ReactNode;
 }
@@ -112,6 +113,7 @@ const LayerUI = ({
   library,
   id,
   onImageAction,
+  onMathAction,
   renderWelcomeScreen,
   children,
 }: LayerUIProps) => {
@@ -390,6 +392,9 @@ const LayerUI = ({
                                 insertOnCanvasDirectly: pointerType !== "mouse",
                               });
                             }}
+                            onMathAction={({ pointerType }) => {
+                              onMathAction();
+                            }}
                           />
                           {/* {actionManager.renderAction("eraser", {
                           // size: "small",
@@ -493,6 +498,7 @@ const LayerUI = ({
           canvas={canvas}
           isCollaborating={isCollaborating}
           onImageAction={onImageAction}
+          onMathAction={onMathAction}
           renderTopRightUI={renderTopRightUI}
           renderCustomStats={renderCustomStats}
           renderSidebars={renderSidebars}

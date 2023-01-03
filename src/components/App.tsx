@@ -591,6 +591,7 @@ class App extends React.Component<AppProps, AppState> {
                     library={this.library}
                     id={this.id}
                     onImageAction={this.onImageAction}
+                    onMathAction={this.onMathAction}
                     renderWelcomeScreen={
                       this.state.showWelcomeScreen &&
                       this.state.activeTool.type === "selection" &&
@@ -5552,6 +5553,13 @@ class App extends React.Component<AppProps, AppState> {
     if (this.state.pendingImageElementId) {
       setCursor(this.canvas, `url(${previewDataURL}) 4 4, auto`);
     }
+  };
+
+  private onMathAction = () => {
+    // Got It to do:
+    // - Open Math Editor
+    // - Render HTML in canvas (math-field)
+    // - Handle output
   };
 
   private onImageAction = async (

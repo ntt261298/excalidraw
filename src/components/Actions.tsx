@@ -213,12 +213,14 @@ export const ShapesSwitcher = ({
   activeTool,
   setAppState,
   onImageAction,
+  onMathAction,
   appState,
 }: {
   canvas: HTMLCanvasElement | null;
   activeTool: AppState["activeTool"];
   setAppState: React.Component<any, AppState>["setState"];
   onImageAction: (data: { pointerType: PointerType | null }) => void;
+  onMathAction: (data: { pointerType: PointerType | null }) => void;
   appState: AppState;
 }) => (
   <>
@@ -267,6 +269,9 @@ export const ShapesSwitcher = ({
             });
             if (value === "image") {
               onImageAction({ pointerType });
+            }
+            if (value === "math") {
+              onMathAction({ pointerType });
             }
           }}
         />

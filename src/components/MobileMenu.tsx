@@ -38,6 +38,7 @@ type MobileMenuProps = {
   isCollaborating: boolean;
 
   onImageAction: (data: { insertOnCanvasDirectly: boolean }) => void;
+  onMathAction: () => void;
   renderTopRightUI?: (
     isMobile: boolean,
     appState: AppState,
@@ -61,6 +62,7 @@ export const MobileMenu = ({
   canvas,
   isCollaborating,
   onImageAction,
+  onMathAction,
   renderTopRightUI,
   renderCustomStats,
   renderSidebars,
@@ -103,6 +105,9 @@ export const MobileMenu = ({
                         onImageAction({
                           insertOnCanvasDirectly: pointerType !== "mouse",
                         });
+                      }}
+                      onMathAction={({ pointerType }) => {
+                        onMathAction();
                       }}
                     />
                   </Stack.Row>
