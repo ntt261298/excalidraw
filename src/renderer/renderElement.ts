@@ -14,6 +14,7 @@ import {
   isFreeDrawElement,
   isInitializedImageElement,
   isArrowElement,
+  isMathElement,
 } from "../element/typeChecks";
 import {
   getDiamondPoints,
@@ -302,6 +303,9 @@ const drawElementOnCanvas = (
         if (shouldTemporarilyAttach) {
           context.canvas.remove();
         }
+        // TODO: why type is always math whereas we chose another tool
+      } else if (isMathElement(element)) {
+        console.info("Math element not supported in canvas renderer");
       } else {
         throw new Error(`Unimplemented type ${element.type}`);
       }
@@ -883,7 +887,8 @@ export const renderElement = (
     case "line":
     case "arrow":
     case "image":
-    case "text": {
+    case "text":
+    case "math": {
       generateElementShape(element, generator);
       if (renderConfig.isExporting) {
         const [x1, y1, x2, y2] = getElementAbsoluteCoords(element);

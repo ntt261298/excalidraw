@@ -12,6 +12,7 @@ import {
   ExcalidrawTextElementWithContainer,
   ExcalidrawTextContainer,
   RoundnessType,
+  ExcalidrawMathElement,
 } from "./types";
 
 export const isGenericElement = (
@@ -42,6 +43,12 @@ export const isTextElement = (
   element: ExcalidrawElement | null,
 ): element is ExcalidrawTextElement => {
   return element != null && element.type === "text";
+};
+
+export const isMathElement = (
+  element: ExcalidrawElement | null,
+): element is ExcalidrawMathElement => {
+  return element != null && element.type === "math";
 };
 
 export const isFreeDrawElement = (

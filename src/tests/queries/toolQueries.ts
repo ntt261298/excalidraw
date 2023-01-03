@@ -11,6 +11,7 @@ const toolMap = {
   freedraw: "freedraw",
   text: "text",
   eraser: "eraser",
+  math: "math",
 };
 
 export type ToolName = keyof typeof toolMap;

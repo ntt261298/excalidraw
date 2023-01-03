@@ -220,7 +220,8 @@
     "lock": "Keep selected tool active after drawing",
     "penMode": "Pen mode - prevent touch",
     "link": "Add/ Update link for a selected shape",
-    "eraser": "Eraser"
+    "eraser": "Eraser",
+    "math": "Math"
   },
   "headings": {
     "canvasActions": "Canvas actions",

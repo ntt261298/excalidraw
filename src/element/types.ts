@@ -82,6 +82,10 @@ export type ExcalidrawEllipseElement = _ExcalidrawElementBase & {
   type: "ellipse";
 };
 
+export type ExcalidrawMathElement = _ExcalidrawElementBase & {
+  type: "math";
+};
+
 export type ExcalidrawImageElement = _ExcalidrawElementBase &
   Readonly<{
     type: "image";
@@ -104,7 +108,8 @@ export type ExcalidrawGenericElement =
   | ExcalidrawSelectionElement
   | ExcalidrawRectangleElement
   | ExcalidrawDiamondElement
-  | ExcalidrawEllipseElement;
+  | ExcalidrawEllipseElement
+  | ExcalidrawMathElement;
 
 /**
  * ExcalidrawElement should be JSON serializable and (eventually) contain

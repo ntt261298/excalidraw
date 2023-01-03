@@ -9,6 +9,7 @@ import {
   RectangleIcon,
   SelectionIcon,
   TextIcon,
+  MathIcon,
 } from "./components/icons";
 import { KEYS } from "./keys";
 
@@ -81,6 +82,13 @@ export const SHAPES = [
     value: "eraser",
     key: KEYS.E,
     numericKey: KEYS["0"],
+    fillable: false,
+  },
+  {
+    icon: MathIcon,
+    value: "math",
+    key: KEYS.M,
+    numericKey: KEYS["10"],
     fillable: false,
   },
 ] as const;

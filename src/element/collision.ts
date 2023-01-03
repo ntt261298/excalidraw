@@ -207,6 +207,9 @@ const hitTestPointAgainstElement = (args: HitTestArgs): boolean => {
         "This should not happen, we need to investigate why it does.",
       );
       return false;
+    case "math":
+      console.warn("Collision on math equation is not supported yet");
+      return false;
   }
 };
 

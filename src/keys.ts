@@ -65,6 +65,7 @@ export const KEYS = {
   Y: "y",
   Z: "z",
   K: "k",
+  M: "m",
 
   0: "0",
   1: "1",
@@ -76,6 +77,7 @@ export const KEYS = {
   7: "7",
   8: "8",
   9: "9",
+  10: "10",
 } as const;
 
 export type Key = keyof typeof KEYS;
