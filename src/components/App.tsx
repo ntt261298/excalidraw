@@ -2663,6 +2663,8 @@ class App extends React.Component<AppProps, AppState> {
     sceneY,
     insertAtParentCenter = true,
     container,
+    clientX,
+    clientY,
   }: {
     /** X position to insert text at */
     sceneX: number;
@@ -2670,11 +2672,45 @@ class App extends React.Component<AppProps, AppState> {
     sceneY: number;
     /** whether to attempt to insert at element center if applicable */
     insertAtParentCenter?: boolean;
-    container?: ExcalidrawTextContainer | null;
+    container?: any;
+    clientX: number;
+    clientY: number;
   }) => {
     // GotIt TODO: create a new math element
     // Handle something like mathWysiwyg (Math what you see is what you get) similar to textWysiwyg
     // sync math element with canvas on blur, pointer up...
+
+    // Testing only
+    const mathFieldString =
+      "<math-field>x=\frac{-bpm sqrt{b^2-4ac}}{2a}</math-field>";
+    const tempNode = document.createElement("div");
+    tempNode.innerHTML = mathFieldString;
+    const testMathNode = tempNode.childNodes[0] as HTMLElement;
+    Object.assign(testMathNode.style, {
+      position: "absolute",
+      display: "inline-block",
+      minHeight: "1em",
+      backfaceVisibility: "hidden",
+      margin: 0,
+      padding: 0,
+      border: 0,
+      outline: 0,
+      resize: "none",
+      background: "transparent",
+      overflow: "hidden",
+      // must be specified because in dark mode canvas creates a stacking context
+      zIndex: "var(--zIndex-wysiwyg)",
+      wordBreak: "normal",
+      // prevent line wrapping (`whitespace: nowrap` doesn't work on FF)
+      whiteSpace: "pre",
+      overflowWrap: "break-word",
+      boxSizing: "content-box",
+      left: `${clientX}px`,
+      top: `${clientY}px`,
+    });
+    this.excalidrawContainerRef.current
+      ?.querySelector(".gotitdraw-mathEditorContainer")
+      ?.appendChild(testMathNode);
   };
 
   private handleCanvasDoubleClick = (
@@ -4148,6 +4184,9 @@ class App extends React.Component<AppProps, AppState> {
       sceneY,
       insertAtParentCenter: !event.altKey,
       container,
+      // Temporary fix for testing purpose
+      clientX: event.clientX,
+      clientY: event.clientY,
     });
 
     resetCursor(this.canvas);
