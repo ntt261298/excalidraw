@@ -131,6 +131,7 @@ import {
   isInitializedImageElement,
   isLinearElement,
   isLinearElementType,
+  isMathElement,
   isUsingAdaptiveRadius,
 } from "../element/typeChecks";
 import {
@@ -601,6 +602,7 @@ class App extends React.Component<AppProps, AppState> {
                     {this.props.children}
                   </LayerUI>
                   <div className="excalidraw-textEditorContainer" />
+                  <div className="gotitdraw-mathEditorContainer"></div>
                   <div className="excalidraw-contextMenuContainer" />
                   {selectedElement.length === 1 &&
                     !this.state.contextMenu &&
@@ -2624,6 +2626,7 @@ class App extends React.Component<AppProps, AppState> {
         }),
       });
     }
+
     this.setState({ editingElement: element });
 
     if (!existingTextElement) {
@@ -2653,6 +2656,25 @@ class App extends React.Component<AppProps, AppState> {
     this.handleTextWysiwyg(element, {
       isExistingElement: !!existingTextElement,
     });
+  };
+
+  private startMathEditing = ({
+    sceneX,
+    sceneY,
+    insertAtParentCenter = true,
+    container,
+  }: {
+    /** X position to insert text at */
+    sceneX: number;
+    /** Y position to insert text at */
+    sceneY: number;
+    /** whether to attempt to insert at element center if applicable */
+    insertAtParentCenter?: boolean;
+    container?: ExcalidrawTextContainer | null;
+  }) => {
+    // GotIt TODO: create a new math element
+    // Handle something like mathWysiwyg (Math what you see is what you get) similar to textWysiwyg
+    // sync math element with canvas on blur, pointer up...
   };
 
   private handleCanvasDoubleClick = (
@@ -3348,6 +3370,7 @@ class App extends React.Component<AppProps, AppState> {
       setCursor(this.canvas, CURSOR_TYPE.AUTO);
     }
   }
+
   private handleCanvasPointerDown = (
     event: React.PointerEvent<HTMLCanvasElement>,
   ) => {
@@ -3444,11 +3467,11 @@ class App extends React.Component<AppProps, AppState> {
       return;
     }
 
-    if (
-      this.state.activeTool.type === "text" ||
-      this.state.activeTool.type === "math"
-    ) {
+    if (this.state.activeTool.type === "text") {
       this.handleTextOnPointerDown(event, pointerDownState);
+      return;
+    } else if (this.state.activeTool.type === "math") {
+      this.handleMathOnPointerDown(event, pointerDownState);
       return;
     } else if (
       this.state.activeTool.type === "arrow" ||
@@ -4077,6 +4100,50 @@ class App extends React.Component<AppProps, AppState> {
       sceneY = element.y + element.height / 2;
     }
     this.startTextEditing({
+      sceneX,
+      sceneY,
+      insertAtParentCenter: !event.altKey,
+      container,
+    });
+
+    resetCursor(this.canvas);
+    if (!this.state.activeTool.locked) {
+      this.setState({
+        activeTool: updateActiveTool(this.state, { type: "selection" }),
+      });
+    }
+  };
+
+  private handleMathOnPointerDown = (
+    event: React.PointerEvent<HTMLCanvasElement>,
+    pointerDownState: PointerDownState,
+  ): void => {
+    // if we're currently still editing text, clicking outside
+    // should only finalize it, not create another (irrespective
+    // of state.activeTool.locked)
+    if (isMathElement(this.state.editingElement)) {
+      return;
+    }
+    let sceneX = pointerDownState.origin.x;
+    let sceneY = pointerDownState.origin.y;
+
+    const element = this.getElementAtPosition(sceneX, sceneY, {
+      includeBoundTextElement: true,
+    });
+
+    let container = getTextBindableContainerAtPosition(
+      this.scene.getNonDeletedElements(),
+      this.state,
+      sceneX,
+      sceneY,
+    );
+
+    if (hasBoundTextElement(element)) {
+      container = element as ExcalidrawTextContainer;
+      sceneX = element.x + element.width / 2;
+      sceneY = element.y + element.height / 2;
+    }
+    this.startMathEditing({
       sceneX,
       sceneY,
       insertAtParentCenter: !event.altKey,
