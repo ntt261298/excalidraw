@@ -1,6 +1,7 @@
 import { getFontString, arrayToMap, isTestEnv } from "../utils";
 import {
   ExcalidrawElement,
+  ExcalidrawMathElement,
   ExcalidrawTextContainer,
   ExcalidrawTextElement,
   ExcalidrawTextElementWithContainer,
@@ -628,7 +629,7 @@ export const getTextElementAngle = (textElement: ExcalidrawTextElement) => {
 };
 
 export const getBoundTextElementOffset = (
-  boundTextElement: ExcalidrawTextElement | null,
+  boundTextElement: ExcalidrawTextElement | ExcalidrawMathElement | null,
 ) => {
   const container = getContainerElement(boundTextElement);
   if (!container) {

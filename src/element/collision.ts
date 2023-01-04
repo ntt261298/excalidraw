@@ -26,6 +26,7 @@ import {
   ExcalidrawImageElement,
   ExcalidrawLinearElement,
   StrokeRoundness,
+  ExcalidrawMathElement,
 } from "./types";
 
 import { getElementAbsoluteCoords, getCurvePathOps, Bounds } from "./bounds";
@@ -185,6 +186,7 @@ const hitTestPointAgainstElement = (args: HitTestArgs): boolean => {
     case "text":
     case "diamond":
     case "ellipse":
+    case "math":
       const distance = distanceToBindableElement(args.element, args.point);
       return args.check(distance, args.threshold);
     case "freedraw": {
@@ -207,9 +209,9 @@ const hitTestPointAgainstElement = (args: HitTestArgs): boolean => {
         "This should not happen, we need to investigate why it does.",
       );
       return false;
-    case "math":
-      console.warn("Collision on math equation is not supported yet");
-      return false;
+    // case "math":
+    //   console.warn("Collision on math equation is not supported yet");
+    //   return false;
   }
 };
 
@@ -221,6 +223,7 @@ export const distanceToBindableElement = (
     case "rectangle":
     case "image":
     case "text":
+    case "math":
       return distanceToRectangle(element, point);
     case "diamond":
       return distanceToDiamond(element, point);
@@ -249,6 +252,7 @@ const distanceToRectangle = (
   element:
     | ExcalidrawRectangleElement
     | ExcalidrawTextElement
+    | ExcalidrawMathElement
     | ExcalidrawFreeDrawElement
     | ExcalidrawImageElement,
   point: Point,
@@ -533,6 +537,7 @@ export const determineFocusDistance = (
     case "rectangle":
     case "image":
     case "text":
+    case "math":
       return c / (hwidth * (nabs + q * mabs));
     case "diamond":
       return mabs < nabs ? c / (nabs * hwidth) : c / (mabs * hheight);
@@ -564,6 +569,7 @@ export const determineFocusPoint = (
     case "rectangle":
     case "image":
     case "text":
+    case "math":
     case "diamond":
       point = findFocusPointForRectangulars(element, focus, adjecentPointRel);
       break;
@@ -614,6 +620,7 @@ const getSortedElementLineIntersections = (
     case "rectangle":
     case "image":
     case "text":
+    case "math":
     case "diamond":
       const corners = getCorners(element);
       intersections = corners
@@ -648,7 +655,8 @@ const getCorners = (
     | ExcalidrawRectangleElement
     | ExcalidrawImageElement
     | ExcalidrawDiamondElement
-    | ExcalidrawTextElement,
+    | ExcalidrawTextElement
+    | ExcalidrawMathElement,
   scale: number = 1,
 ): GA.Point[] => {
   const hx = (scale * element.width) / 2;
@@ -657,6 +665,7 @@ const getCorners = (
     case "rectangle":
     case "image":
     case "text":
+    case "math":
       return [
         GA.point(hx, hy),
         GA.point(hx, -hy),
@@ -799,7 +808,8 @@ export const findFocusPointForRectangulars = (
     | ExcalidrawRectangleElement
     | ExcalidrawImageElement
     | ExcalidrawDiamondElement
-    | ExcalidrawTextElement,
+    | ExcalidrawTextElement
+    | ExcalidrawMathElement,
   // Between -1 and 1 for how far away should the focus point be relative
   // to the size of the element. Sign determines orientation.
   relativeDistance: number,

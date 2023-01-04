@@ -12,6 +12,7 @@ import {
   ExcalidrawFreeDrawElement,
   FontFamilyValues,
   ExcalidrawTextContainer,
+  ExcalidrawMathElement,
 } from "../element/types";
 import { getFontString, getUpdatedTimestamp, isTestEnv } from "../utils";
 import { randomInteger, randomId } from "../random";
@@ -163,7 +164,7 @@ export const newTextElement = (
 };
 
 const getAdjustedDimensions = (
-  element: ExcalidrawTextElement,
+  element: ExcalidrawTextElement | ExcalidrawMathElement,
   nextText: string,
 ): {
   x: number;
@@ -263,7 +264,7 @@ const getAdjustedDimensions = (
 };
 
 export const refreshTextDimensions = (
-  textElement: ExcalidrawTextElement,
+  textElement: ExcalidrawTextElement | ExcalidrawMathElement,
   text = textElement.text,
 ) => {
   const container = getContainerElement(textElement);

@@ -158,6 +158,7 @@ const restoreElement = (
 ): typeof element | null => {
   switch (element.type) {
     case "text":
+    case "math":
       let fontSize = element.fontSize;
       let fontFamily = element.fontFamily;
       if ("font" in element) {
@@ -242,8 +243,6 @@ const restoreElement = (
     case "rectangle":
       return restoreElementWithProperties(element, {});
     case "diamond":
-      return restoreElementWithProperties(element, {});
-    case "math":
       return restoreElementWithProperties(element, {});
     // Don't use default case so as to catch a missing an element type case.
     // We also don't want to throw, but instead return void so we filter

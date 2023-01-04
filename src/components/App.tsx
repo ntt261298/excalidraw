@@ -3437,13 +3437,17 @@ class App extends React.Component<AppProps, AppState> {
       event.pointerType !== "touch" ||
       this.state.activeTool.type === "selection" ||
       this.state.activeTool.type === "text" ||
+      this.state.activeTool.type === "math" ||
       this.state.activeTool.type === "image";
 
     if (!allowOnPointerDown) {
       return;
     }
 
-    if (this.state.activeTool.type === "text") {
+    if (
+      this.state.activeTool.type === "text" ||
+      this.state.activeTool.type === "math"
+    ) {
       this.handleTextOnPointerDown(event, pointerDownState);
       return;
     } else if (

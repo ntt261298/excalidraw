@@ -262,7 +262,7 @@ const drawElementOnCanvas = (
       break;
     }
     default: {
-      if (isTextElement(element)) {
+      if (isTextElement(element) || isMathElement(element)) {
         const rtl = isRTL(element.text);
         const shouldTemporarilyAttach = rtl && !context.canvas.isConnected;
         if (shouldTemporarilyAttach) {
@@ -304,8 +304,6 @@ const drawElementOnCanvas = (
           context.canvas.remove();
         }
         // TODO: why type is always math whereas we chose another tool
-      } else if (isMathElement(element)) {
-        console.info("Math element not supported in canvas renderer");
       } else {
         throw new Error(`Unimplemented type ${element.type}`);
       }
@@ -329,6 +327,7 @@ type ElementShapes = {
   line: Drawable[];
   text: null;
   image: null;
+  math: null;
 };
 
 export const getShapeForElement = <T extends ExcalidrawElement>(element: T) =>
@@ -655,7 +654,8 @@ const generateElementShape = (
         break;
       }
       case "text":
-      case "image": {
+      case "image":
+      case "math": {
         // just to ensure we don't regenerate element.canvas on rerenders
         setShapeForElement(element, null);
         break;

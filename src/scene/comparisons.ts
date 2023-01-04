@@ -30,7 +30,7 @@ export const canChangeRoundness = (type: string) =>
   type === "line" ||
   type === "diamond";
 
-export const hasText = (type: string) => type === "text";
+export const hasText = (type: string) => type === "text" || type === "math";
 
 export const canHaveArrowheads = (type: string) => type === "arrow";
 

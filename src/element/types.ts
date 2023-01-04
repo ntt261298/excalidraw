@@ -82,10 +82,6 @@ export type ExcalidrawEllipseElement = _ExcalidrawElementBase & {
   type: "ellipse";
 };
 
-export type ExcalidrawMathElement = _ExcalidrawElementBase & {
-  type: "math";
-};
-
 export type ExcalidrawImageElement = _ExcalidrawElementBase &
   Readonly<{
     type: "image";
@@ -108,8 +104,7 @@ export type ExcalidrawGenericElement =
   | ExcalidrawSelectionElement
   | ExcalidrawRectangleElement
   | ExcalidrawDiamondElement
-  | ExcalidrawEllipseElement
-  | ExcalidrawMathElement;
+  | ExcalidrawEllipseElement;
 
 /**
  * ExcalidrawElement should be JSON serializable and (eventually) contain
@@ -121,7 +116,8 @@ export type ExcalidrawElement =
   | ExcalidrawTextElement
   | ExcalidrawLinearElement
   | ExcalidrawFreeDrawElement
-  | ExcalidrawImageElement;
+  | ExcalidrawImageElement
+  | ExcalidrawMathElement;
 
 export type NonDeleted<TElement extends ExcalidrawElement> = TElement & {
   isDeleted: boolean;
@@ -142,12 +138,26 @@ export type ExcalidrawTextElement = _ExcalidrawElementBase &
     originalText: string;
   }>;
 
+export type ExcalidrawMathElement = _ExcalidrawElementBase &
+  Readonly<{
+    type: "math";
+    fontSize: number;
+    fontFamily: FontFamilyValues;
+    text: string;
+    baseline: number;
+    textAlign: TextAlign;
+    verticalAlign: VerticalAlign;
+    containerId: ExcalidrawGenericElement["id"] | null;
+    originalText: string;
+  }>;
+
 export type ExcalidrawBindableElement =
   | ExcalidrawRectangleElement
   | ExcalidrawDiamondElement
   | ExcalidrawEllipseElement
   | ExcalidrawTextElement
-  | ExcalidrawImageElement;
+  | ExcalidrawImageElement
+  | ExcalidrawMathElement;
 
 export type ExcalidrawTextContainer =
   | ExcalidrawRectangleElement

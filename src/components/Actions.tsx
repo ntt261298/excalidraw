@@ -81,9 +81,9 @@ export const SelectedShapeActions = ({
   }
 
   // Temporary hidden panel column for math tool
-  if (appState.activeTool.type === "math") {
-    return <></>;
-  }
+  // if (appState.activeTool.type === "math") {
+  //   return <></>;
+  // }
 
   return (
     <div className="panelColumn">
