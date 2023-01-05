@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { MathJaxContext } from "better-react-mathjax";
 import ExcalidrawApp from "./excalidraw-app";
 
 import "./excalidraw-app/pwa";
@@ -9,6 +10,18 @@ const rootElement = document.getElementById("root")!;
 const root = createRoot(rootElement);
 root.render(
   <StrictMode>
-    <ExcalidrawApp />
+    <MathJaxContext
+      src={"/tex-mml-svg.js"}
+      config={{
+        loader: {
+          load: ["/input/asciimath", "/output/chtml"],
+        },
+        options: {
+          enableMenu: false,
+        },
+      }}
+    >
+      <ExcalidrawApp />
+    </MathJaxContext>
   </StrictMode>,
 );

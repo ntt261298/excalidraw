@@ -351,6 +351,18 @@ const gesture: Gesture = {
   initialScale: null,
 };
 
+interface MathFieldElement extends HTMLElement {
+  executeCommand: (command: string) => void;
+}
+
+declare global {
+  interface Window {
+    MathJax: {
+      tex2svg: any;
+    };
+  }
+}
+
 class App extends React.Component<AppProps, AppState> {
   canvas: AppClassProperties["canvas"] = null;
   rc: RoughCanvas | null = null;
@@ -2681,11 +2693,77 @@ class App extends React.Component<AppProps, AppState> {
     // sync math element with canvas on blur, pointer up...
 
     // Testing only
-    const mathFieldString =
-      "<math-field>x=\frac{-bpm sqrt{b^2-4ac}}{2a}</math-field>";
+    const mathFieldString = "<math-field></math-field>";
     const tempNode = document.createElement("div");
     tempNode.innerHTML = mathFieldString;
-    const testMathNode = tempNode.childNodes[0] as HTMLElement;
+
+    const testMathNode = tempNode.childNodes[0] as MathFieldElement;
+
+    testMathNode.addEventListener("blur", (e: any) => {
+      testMathNode.executeCommand("hideVirtualKeyboard");
+      const latex = e.target?.value || "";
+      // Generate image from latex
+      const wrapper = window.MathJax.tex2svg(`${latex}`, {
+        em: 18,
+        display: true,
+      });
+      const output = { svg: "", img: "" };
+      const mjOut = wrapper.getElementsByTagName("svg")[0];
+      output.svg = mjOut.outerHTML;
+      const base64 = `data:image/svg+xml;base64,${window.btoa(
+        unescape(encodeURIComponent(output.svg)),
+      )}`;
+
+      // Get sceneX, sceneY
+      const clientX = this.state.width / 2 + this.state.offsetLeft;
+      const clientY = this.state.height / 2 + this.state.offsetTop;
+
+      const { x, y } = viewportCoordsToSceneCoords(
+        { clientX, clientY },
+        this.state,
+      );
+
+      const imageElement = this.createImageElement({
+        sceneX: x,
+        sceneY: y,
+      });
+
+      const b64toBlob = (
+        b64Data: string,
+        contentType = "",
+        sliceSize = 512,
+      ) => {
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+
+        for (
+          let offset = 0;
+          offset < byteCharacters.length;
+          offset += sliceSize
+        ) {
+          const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+
+        const blob = new Blob(byteArrays, { type: contentType });
+
+        return blob;
+      };
+
+      const imageFile = b64toBlob(base64, "image/svg+xml") as File;
+
+      this.insertImageElement(imageElement, imageFile);
+
+      // GotIt todo: Remove testMathNode from DOM
+    });
+
     Object.assign(testMathNode.style, {
       position: "absolute",
       display: "inline-block",
@@ -2711,6 +2789,9 @@ class App extends React.Component<AppProps, AppState> {
     this.excalidrawContainerRef.current
       ?.querySelector(".gotitdraw-mathEditorContainer")
       ?.appendChild(testMathNode);
+
+    // Show Math Editor
+    testMathNode.executeCommand("showVirtualKeyboard");
   };
 
   private handleCanvasDoubleClick = (
