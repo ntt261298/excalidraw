@@ -2710,9 +2710,7 @@ class App extends React.Component<AppProps, AppState> {
       const output = { svg: "", img: "" };
       const mjOut = wrapper.getElementsByTagName("svg")[0];
       output.svg = mjOut.outerHTML;
-      const base64 = `data:image/svg+xml;base64,${window.btoa(
-        unescape(encodeURIComponent(output.svg)),
-      )}`;
+      const base64 = `${window.btoa(unescape(encodeURIComponent(output.svg)))}`;
 
       // Get sceneX, sceneY
       const clientX = this.state.width / 2 + this.state.offsetLeft;
@@ -2761,7 +2759,7 @@ class App extends React.Component<AppProps, AppState> {
 
       this.insertImageElement(imageElement, imageFile);
 
-      // GotIt todo: Remove testMathNode from DOM
+      testMathNode.remove();
     });
 
     Object.assign(testMathNode.style, {
