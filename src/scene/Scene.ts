@@ -168,6 +168,22 @@ class Scene {
   getElementIndex(elementId: string) {
     return this.elements.findIndex((element) => element.id === elementId);
   }
+
+  removeElement(elementId: string) {
+    const index = this.getElementIndex(elementId);
+    if (index === -1) {
+      throw new Error("element not found");
+    }
+    this._removeElementAtIndex(index);
+  }
+
+  private _removeElementAtIndex(index: number) {
+    const nextElements = [
+      ...this.elements.slice(0, index),
+      ...this.elements.slice(index + 1),
+    ];
+    this.replaceAllElements(nextElements);
+  }
 }
 
 export default Scene;

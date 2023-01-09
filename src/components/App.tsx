@@ -283,6 +283,7 @@ import { shouldShowBoundingBox } from "../element/transformHandles";
 import { atom } from "jotai";
 import { Fonts } from "../scene/Fonts";
 import { actionPaste } from "../actions/actionClipboard";
+import { mathWysiwyg } from "../element/mathWysiwyg";
 
 export const isMenuOpenAtom = atom(false);
 export const isDropdownOpenAtom = atom(false);
@@ -357,10 +358,6 @@ const gesture: Gesture = {
   initialDistance: null,
   initialScale: null,
 };
-
-interface MathFieldElement extends HTMLElement {
-  executeCommand: (command: string) => void;
-}
 
 declare global {
   interface Window {
@@ -2473,143 +2470,77 @@ class App extends React.Component<AppProps, AppState> {
       ]);
     };
 
-    const updateWysiwygStyle = () => {
-      const appState = this.state;
-      const updatedMathElement = Scene.getScene(
-        element,
-      )?.getElement<ExcalidrawMathElement>(element.id);
-      if (!updatedMathElement) {
-        return;
-      }
-      if (updatedMathElement && isMathElement(updatedMathElement)) {
-        const coordX = updatedMathElement.x;
-        const coordY = updatedMathElement.y;
-        // Set to element height by default since that's
-        // what is going to be used for unbounded text
-        const textElementHeight = updatedMathElement.height;
-        const { x, y } = sceneCoordsToViewportCoords(
+    mathWysiwyg({
+      id: element.id,
+      canvas: this.canvas,
+      getViewportCoords: (x, y) => {
+        const { x: viewportX, y: viewportY } = sceneCoordsToViewportCoords(
           {
-            sceneX: coordX,
-            sceneY: coordY,
+            sceneX: x,
+            sceneY: y,
           },
           this.state,
         );
-        const [viewportX, viewportY] = [
-          x - this.state.offsetLeft,
-          y - this.state.offsetTop,
+        return [
+          viewportX - this.state.offsetLeft,
+          viewportY - this.state.offsetTop,
         ];
+      },
+      onSubmit: withBatchedUpdates(({ latex, coordX, coordY }) => {
+        // Generate image from latex
+        const wrapper = window.MathJax.tex2svg(`${latex}`, {
+          em: 18,
+          display: true,
+        });
+        const output = { svg: "", img: "" };
+        const mjOut = wrapper.getElementsByTagName("svg")[0];
+        output.svg = mjOut.outerHTML;
+        const base64 = `${window.btoa(
+          unescape(encodeURIComponent(output.svg)),
+        )}`;
 
-        const editorMaxHeight =
-          (appState.height - viewportY) / appState.zoom.value;
-
-        Object.assign(mathNode.style, {
-          height: `${textElementHeight}px`,
-          left: `${viewportX}px`,
-          top: `${viewportY}px`,
-          opacity: updatedMathElement.opacity / 100,
-          filter: "var(--theme-filter)",
-          maxHeight: `${editorMaxHeight}px`,
+        const imageElement = this.createImageElement({
+          sceneX: coordX,
+          sceneY: coordY,
         });
 
-        mutateElement(updatedMathElement, { x: coordX, y: coordY });
-      }
-    };
+        const b64toBlob = (
+          b64Data: string,
+          contentType = "",
+          sliceSize = 512,
+        ) => {
+          const byteCharacters = atob(b64Data);
+          const byteArrays = [];
 
-    // Create math field dom element
-    const mathFieldString = "<math-field></math-field>";
-    const tempNode = document.createElement("div");
-    tempNode.innerHTML = mathFieldString;
-    const mathNode = tempNode.childNodes[0] as MathFieldElement;
+          for (
+            let offset = 0;
+            offset < byteCharacters.length;
+            offset += sliceSize
+          ) {
+            const slice = byteCharacters.slice(offset, offset + sliceSize);
 
-    Object.assign(mathNode.style, {
-      position: "absolute",
-      display: "inline-block",
-      minHeight: "1em",
-      backfaceVisibility: "hidden",
-      margin: 0,
-      padding: 0,
-      border: 0,
-      outline: 0,
-      resize: "none",
-      background: "transparent",
-      overflow: "hidden",
-      zIndex: "var(--zIndex-wysiwyg)",
-      overflowWrap: "break-word",
-      boxSizing: "content-box",
-    });
-    updateWysiwygStyle();
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+              byteNumbers[i] = slice.charCodeAt(i);
+            }
 
-    // Submit when user clicks outside of the math field (blur event)
-    mathNode.addEventListener("blur", (e: any) => {
-      mathNode.executeCommand("hideVirtualKeyboard");
-      const latex = e.target?.value || "";
-      // Generate image from latex
-      const wrapper = window.MathJax.tex2svg(`${latex}`, {
-        em: 18,
-        display: true,
-      });
-      const output = { svg: "", img: "" };
-      const mjOut = wrapper.getElementsByTagName("svg")[0];
-      output.svg = mjOut.outerHTML;
-      const base64 = `${window.btoa(unescape(encodeURIComponent(output.svg)))}`;
-
-      // Get sceneX, sceneY
-      const clientX = this.state.width / 2 + this.state.offsetLeft;
-      // TODO: double check position here
-      const clientY = this.state.height / 2 + this.state.offsetTop;
-
-      const { x, y } = viewportCoordsToSceneCoords(
-        { clientX, clientY },
-        this.state,
-      );
-
-      const imageElement = this.createImageElement({
-        sceneX: x,
-        sceneY: y,
-      });
-
-      const b64toBlob = (
-        b64Data: string,
-        contentType = "",
-        sliceSize = 512,
-      ) => {
-        const byteCharacters = atob(b64Data);
-        const byteArrays = [];
-
-        for (
-          let offset = 0;
-          offset < byteCharacters.length;
-          offset += sliceSize
-        ) {
-          const slice = byteCharacters.slice(offset, offset + sliceSize);
-
-          const byteNumbers = new Array(slice.length);
-          for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
+            const byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
           }
 
-          const byteArray = new Uint8Array(byteNumbers);
-          byteArrays.push(byteArray);
-        }
+          const blob = new Blob(byteArrays, { type: contentType });
 
-        const blob = new Blob(byteArrays, { type: contentType });
+          return blob;
+        };
 
-        return blob;
-      };
+        const imageFile = b64toBlob(base64, "image/svg+xml") as File;
 
-      const imageFile = b64toBlob(base64, "image/svg+xml") as File;
-
-      this.insertImageElement(imageElement, imageFile);
-
-      mathNode.remove();
+        this.insertImageElement(imageElement, imageFile);
+      }),
+      element,
+      excalidrawContainer: this.excalidrawContainerRef.current,
+      app: this,
     });
-
-    this.excalidrawContainerRef.current
-      ?.querySelector(".gotitdraw-mathEditorContainer")
-      ?.appendChild(mathNode);
-
-    // Show Math Editor
-    mathNode.executeCommand("showVirtualKeyboard");
 
     // deselect all other elements when inserting text
     this.deselectElements();
