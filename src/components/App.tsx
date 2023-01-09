@@ -120,7 +120,12 @@ import {
 } from "../element/binding";
 import { LinearElementEditor } from "../element/linearElementEditor";
 import { mutateElement, newElementWith } from "../element/mutateElement";
-import { deepCopyElement, newFreeDrawElement } from "../element/newElement";
+import {
+  deepCopyElement,
+  newFreeDrawElement,
+  newMathElement,
+  updateMathElement,
+} from "../element/newElement";
 import {
   hasBoundTextElement,
   isArrowElement,
@@ -147,6 +152,7 @@ import {
   FileId,
   NonDeletedExcalidrawElement,
   ExcalidrawTextContainer,
+  ExcalidrawMathElement,
 } from "../element/types";
 import { getCenter, getDistance } from "../gesture";
 import {
@@ -260,6 +266,7 @@ import {
   getBoundTextElement,
   getContainerCenter,
   getContainerDims,
+  getContainerElement,
   getTextBindableContainerAtPosition,
   isValidTextContainer,
 } from "../element/textElement";
@@ -2430,6 +2437,180 @@ class App extends React.Component<AppProps, AppState> {
       excalidrawContainer: this.excalidrawContainerRef.current,
       app: this,
     });
+
+    // deselect all other elements when inserting text
+    this.deselectElements();
+
+    // do an initial update to re-initialize element position since we were
+    // modifying element's x/y for sake of editor (case: syncing to remote)
+    updateElement(element.text, element.originalText, false);
+  }
+
+  private handleMathWysiwyg(
+    element: ExcalidrawMathElement,
+    {
+      isExistingElement = false,
+    }: {
+      isExistingElement?: boolean;
+    },
+  ) {
+    const updateElement = (
+      text: string,
+      originalText: string,
+      isDeleted: boolean,
+    ) => {
+      this.scene.replaceAllElements([
+        ...this.scene.getElementsIncludingDeleted().map((_element) => {
+          if (_element.id === element.id && isMathElement(_element)) {
+            return updateMathElement(_element, {
+              text,
+              isDeleted,
+              originalText,
+            });
+          }
+          return _element;
+        }),
+      ]);
+    };
+
+    const updateWysiwygStyle = () => {
+      const appState = this.state;
+      const updatedMathElement = Scene.getScene(
+        element,
+      )?.getElement<ExcalidrawMathElement>(element.id);
+      if (!updatedMathElement) {
+        return;
+      }
+      if (updatedMathElement && isMathElement(updatedMathElement)) {
+        const coordX = updatedMathElement.x;
+        const coordY = updatedMathElement.y;
+        // Set to element height by default since that's
+        // what is going to be used for unbounded text
+        const textElementHeight = updatedMathElement.height;
+        const { x, y } = sceneCoordsToViewportCoords(
+          {
+            sceneX: coordX,
+            sceneY: coordY,
+          },
+          this.state,
+        );
+        const [viewportX, viewportY] = [
+          x - this.state.offsetLeft,
+          y - this.state.offsetTop,
+        ];
+
+        const editorMaxHeight =
+          (appState.height - viewportY) / appState.zoom.value;
+
+        Object.assign(mathNode.style, {
+          height: `${textElementHeight}px`,
+          left: `${viewportX}px`,
+          top: `${viewportY}px`,
+          opacity: updatedMathElement.opacity / 100,
+          filter: "var(--theme-filter)",
+          maxHeight: `${editorMaxHeight}px`,
+        });
+
+        mutateElement(updatedMathElement, { x: coordX, y: coordY });
+      }
+    };
+
+    // Create math field dom element
+    const mathFieldString = "<math-field></math-field>";
+    const tempNode = document.createElement("div");
+    tempNode.innerHTML = mathFieldString;
+    const mathNode = tempNode.childNodes[0] as MathFieldElement;
+
+    Object.assign(mathNode.style, {
+      position: "absolute",
+      display: "inline-block",
+      minHeight: "1em",
+      backfaceVisibility: "hidden",
+      margin: 0,
+      padding: 0,
+      border: 0,
+      outline: 0,
+      resize: "none",
+      background: "transparent",
+      overflow: "hidden",
+      zIndex: "var(--zIndex-wysiwyg)",
+      overflowWrap: "break-word",
+      boxSizing: "content-box",
+    });
+    updateWysiwygStyle();
+
+    // Submit when user clicks outside of the math field (blur event)
+    mathNode.addEventListener("blur", (e: any) => {
+      mathNode.executeCommand("hideVirtualKeyboard");
+      const latex = e.target?.value || "";
+      // Generate image from latex
+      const wrapper = window.MathJax.tex2svg(`${latex}`, {
+        em: 18,
+        display: true,
+      });
+      const output = { svg: "", img: "" };
+      const mjOut = wrapper.getElementsByTagName("svg")[0];
+      output.svg = mjOut.outerHTML;
+      const base64 = `${window.btoa(unescape(encodeURIComponent(output.svg)))}`;
+
+      // Get sceneX, sceneY
+      const clientX = this.state.width / 2 + this.state.offsetLeft;
+      // TODO: double check position here
+      const clientY = this.state.height / 2 + this.state.offsetTop;
+
+      const { x, y } = viewportCoordsToSceneCoords(
+        { clientX, clientY },
+        this.state,
+      );
+
+      const imageElement = this.createImageElement({
+        sceneX: x,
+        sceneY: y,
+      });
+
+      const b64toBlob = (
+        b64Data: string,
+        contentType = "",
+        sliceSize = 512,
+      ) => {
+        const byteCharacters = atob(b64Data);
+        const byteArrays = [];
+
+        for (
+          let offset = 0;
+          offset < byteCharacters.length;
+          offset += sliceSize
+        ) {
+          const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+          const byteNumbers = new Array(slice.length);
+          for (let i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+
+          const byteArray = new Uint8Array(byteNumbers);
+          byteArrays.push(byteArray);
+        }
+
+        const blob = new Blob(byteArrays, { type: contentType });
+
+        return blob;
+      };
+
+      const imageFile = b64toBlob(base64, "image/svg+xml") as File;
+
+      this.insertImageElement(imageElement, imageFile);
+
+      mathNode.remove();
+    });
+
+    this.excalidrawContainerRef.current
+      ?.querySelector(".gotitdraw-mathEditorContainer")
+      ?.appendChild(mathNode);
+
+    // Show Math Editor
+    mathNode.executeCommand("showVirtualKeyboard");
+
     // deselect all other elements when inserting text
     this.deselectElements();
 
@@ -2675,8 +2856,6 @@ class App extends React.Component<AppProps, AppState> {
     sceneY,
     insertAtParentCenter = true,
     container,
-    clientX,
-    clientY,
   }: {
     /** X position to insert text at */
     sceneX: number;
@@ -2685,111 +2864,47 @@ class App extends React.Component<AppProps, AppState> {
     /** whether to attempt to insert at element center if applicable */
     insertAtParentCenter?: boolean;
     container?: any;
-    clientX: number;
-    clientY: number;
   }) => {
-    // GotIt TODO: create a new math element
-    // Handle something like mathWysiwyg (Math what you see is what you get) similar to textWysiwyg
-    // sync math element with canvas on blur, pointer up...
-
-    // Testing only
-    const mathFieldString = "<math-field></math-field>";
-    const tempNode = document.createElement("div");
-    tempNode.innerHTML = mathFieldString;
-
-    const testMathNode = tempNode.childNodes[0] as MathFieldElement;
-
-    testMathNode.addEventListener("blur", (e: any) => {
-      testMathNode.executeCommand("hideVirtualKeyboard");
-      const latex = e.target?.value || "";
-      // Generate image from latex
-      const wrapper = window.MathJax.tex2svg(`${latex}`, {
-        em: 18,
-        display: true,
-      });
-      const output = { svg: "", img: "" };
-      const mjOut = wrapper.getElementsByTagName("svg")[0];
-      output.svg = mjOut.outerHTML;
-      const base64 = `${window.btoa(unescape(encodeURIComponent(output.svg)))}`;
-
-      // Get sceneX, sceneY
-      const clientX = this.state.width / 2 + this.state.offsetLeft;
-      const clientY = this.state.height / 2 + this.state.offsetTop;
-
-      const { x, y } = viewportCoordsToSceneCoords(
-        { clientX, clientY },
-        this.state,
-      );
-
-      const imageElement = this.createImageElement({
-        sceneX: x,
-        sceneY: y,
-      });
-
-      const b64toBlob = (
-        b64Data: string,
-        contentType = "",
-        sliceSize = 512,
-      ) => {
-        const byteCharacters = atob(b64Data);
-        const byteArrays = [];
-
-        for (
-          let offset = 0;
-          offset < byteCharacters.length;
-          offset += sliceSize
-        ) {
-          const slice = byteCharacters.slice(offset, offset + sliceSize);
-
-          const byteNumbers = new Array(slice.length);
-          for (let i = 0; i < slice.length; i++) {
-            byteNumbers[i] = slice.charCodeAt(i);
-          }
-
-          const byteArray = new Uint8Array(byteNumbers);
-          byteArrays.push(byteArray);
-        }
-
-        const blob = new Blob(byteArrays, { type: contentType });
-
-        return blob;
-      };
-
-      const imageFile = b64toBlob(base64, "image/svg+xml") as File;
-
-      this.insertImageElement(imageElement, imageFile);
-
-      testMathNode.remove();
+    // TODO: check for existing math element at position
+    // Currently. this fn is only called when the user create a new math element
+    // Create new math element
+    const element = newMathElement({
+      x: sceneX,
+      y: sceneY,
+      strokeColor: this.state.currentItemStrokeColor,
+      backgroundColor: this.state.currentItemBackgroundColor,
+      fillStyle: this.state.currentItemFillStyle,
+      strokeWidth: this.state.currentItemStrokeWidth,
+      strokeStyle: this.state.currentItemStrokeStyle,
+      roughness: this.state.currentItemRoughness,
+      opacity: this.state.currentItemOpacity,
+      roundness: null,
+      text: "",
+      fontSize: this.state.currentItemFontSize,
+      fontFamily: this.state.currentItemFontFamily,
+      textAlign: this.state.currentItemTextAlign,
+      verticalAlign: DEFAULT_VERTICAL_ALIGN,
+      containerId: undefined,
+      groupIds: container?.groupIds ?? [],
+      locked: false,
     });
 
-    Object.assign(testMathNode.style, {
-      position: "absolute",
-      display: "inline-block",
-      minHeight: "1em",
-      backfaceVisibility: "hidden",
-      margin: 0,
-      padding: 0,
-      border: 0,
-      outline: 0,
-      resize: "none",
-      background: "transparent",
-      overflow: "hidden",
-      // must be specified because in dark mode canvas creates a stacking context
-      zIndex: "var(--zIndex-wysiwyg)",
-      wordBreak: "normal",
-      // prevent line wrapping (`whitespace: nowrap` doesn't work on FF)
-      whiteSpace: "pre",
-      overflowWrap: "break-word",
-      boxSizing: "content-box",
-      left: `${clientX}px`,
-      top: `${clientY}px`,
-    });
-    this.excalidrawContainerRef.current
-      ?.querySelector(".gotitdraw-mathEditorContainer")
-      ?.appendChild(testMathNode);
+    this.setState({ editingElement: element });
 
-    // Show Math Editor
-    testMathNode.executeCommand("showVirtualKeyboard");
+    // In case of creating new math element, we add this element
+    // to the scene
+    this.scene.replaceAllElements([
+      ...this.scene.getElementsIncludingDeleted(),
+      element,
+    ]);
+
+    this.setState({
+      editingElement: element,
+    });
+
+    this.handleMathWysiwyg(element, {
+      isExistingElement: false,
+    });
   };
 
   private handleCanvasDoubleClick = (
@@ -4263,9 +4378,6 @@ class App extends React.Component<AppProps, AppState> {
       sceneY,
       insertAtParentCenter: !event.altKey,
       container,
-      // Temporary fix for testing purpose
-      clientX: event.clientX,
-      clientY: event.clientY,
     });
 
     resetCursor(this.canvas);

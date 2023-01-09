@@ -13,6 +13,7 @@ import {
   FontFamilyValues,
   ExcalidrawTextContainer,
   ExcalidrawMathElement,
+  ExcalidrawMathContainer,
 } from "../element/types";
 import { getFontString, getUpdatedTimestamp, isTestEnv } from "../utils";
 import { randomInteger, randomId } from "../random";
@@ -161,6 +162,40 @@ export const newTextElement = (
     {},
   );
   return textElement;
+};
+
+export const newMathElement = (
+  opts: {
+    text: string;
+    fontSize: number;
+    fontFamily: FontFamilyValues;
+    textAlign: TextAlign;
+    verticalAlign: VerticalAlign;
+    containerId?: ExcalidrawMathContainer["id"];
+  } & ElementConstructorOpts,
+): NonDeleted<ExcalidrawMathElement> => {
+  const metrics = measureText(opts.text, getFontString(opts));
+  const offsets = getTextElementPositionOffsets(opts, metrics);
+  const mathElement = newElementWith(
+    {
+      ..._newElementBase<ExcalidrawMathElement>("math", opts),
+      text: opts.text,
+      fontSize: opts.fontSize,
+      fontFamily: opts.fontFamily,
+      textAlign: opts.textAlign,
+      verticalAlign: opts.verticalAlign,
+      x: opts.x - offsets.x,
+      y: opts.y - offsets.y,
+      width: metrics.width,
+      height: metrics.height,
+      baseline: metrics.baseline,
+      containerId: opts.containerId || null,
+      originalText: opts.text,
+    },
+    {},
+  );
+
+  return mathElement;
 };
 
 const getAdjustedDimensions = (
@@ -323,6 +358,25 @@ export const updateTextElement = (
     originalText: string;
   },
 ): ExcalidrawTextElement => {
+  return newElementWith(textElement, {
+    originalText,
+    isDeleted: isDeleted ?? textElement.isDeleted,
+    ...refreshTextDimensions(textElement, originalText),
+  });
+};
+
+export const updateMathElement = (
+  textElement: ExcalidrawMathElement,
+  {
+    text,
+    isDeleted,
+    originalText,
+  }: {
+    text: string;
+    isDeleted?: boolean;
+    originalText: string;
+  },
+): ExcalidrawMathElement => {
   return newElementWith(textElement, {
     originalText,
     isDeleted: isDeleted ?? textElement.isDeleted,
