@@ -425,6 +425,7 @@ export const newImageElement = (
     status?: ExcalidrawImageElement["status"];
     fileId?: ExcalidrawImageElement["fileId"];
     scale?: ExcalidrawImageElement["scale"];
+    latex?: ExcalidrawImageElement["latex"];
   } & ElementConstructorOpts,
 ): NonDeleted<ExcalidrawImageElement> => {
   return {
@@ -435,6 +436,7 @@ export const newImageElement = (
     status: opts.status ?? "pending",
     fileId: opts.fileId ?? null,
     scale: opts.scale ?? [1, 1],
+    latex: opts.latex ?? null,
   };
 };
 

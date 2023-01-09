@@ -69,6 +69,12 @@ export const isLinearElement = (
   return element != null && isLinearElementType(element.type);
 };
 
+export const isLatexImageElement = (
+  element?: ExcalidrawElement | null,
+): element is ExcalidrawImageElement => {
+  return element != null && element.type === "image" && element.latex != null;
+};
+
 export const isArrowElement = (
   element?: ExcalidrawElement | null,
 ): element is ExcalidrawLinearElement => {

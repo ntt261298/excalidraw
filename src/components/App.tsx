@@ -2502,6 +2502,7 @@ class App extends React.Component<AppProps, AppState> {
         const imageElement = this.createImageElement({
           sceneX: coordX,
           sceneY: coordY,
+          latex,
         });
 
         const b64toBlob = (
@@ -4382,9 +4383,11 @@ class App extends React.Component<AppProps, AppState> {
   private createImageElement = ({
     sceneX,
     sceneY,
+    latex = null,
   }: {
     sceneX: number;
     sceneY: number;
+    latex?: string | null;
   }) => {
     const [gridX, gridY] = getGridPoint(sceneX, sceneY, this.state.gridSize);
 
@@ -4401,6 +4404,7 @@ class App extends React.Component<AppProps, AppState> {
       roundness: null,
       opacity: this.state.currentItemOpacity,
       locked: false,
+      latex,
     });
 
     return element;

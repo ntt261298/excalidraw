@@ -101,7 +101,7 @@ export const mathWysiwyg = ({
     if (!updateElement) {
       return;
     }
-    const latex: string = e.target.value || "";
+    const latex: string = e.target.value || null;
 
     // Remove math element before submit
     app.scene.removeElement(id);
