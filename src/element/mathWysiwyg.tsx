@@ -58,7 +58,7 @@ export const mathWysiwyg = ({
 
       let scaleY = 1;
 
-      if (boundingHeight) {
+      if (boundingHeight < updatedMathElement.height) {
         scaleY = updatedMathElement.height / boundingHeight;
       }
 
