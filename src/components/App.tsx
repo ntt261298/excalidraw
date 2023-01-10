@@ -2817,6 +2817,8 @@ class App extends React.Component<AppProps, AppState> {
           locked: false,
         })
       : newMathElement({
+          width: 1,
+          height: 33,
           x: sceneX,
           y: sceneY,
           strokeColor: this.state.currentItemStrokeColor,

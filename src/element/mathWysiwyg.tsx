@@ -54,12 +54,18 @@ export const mathWysiwyg = ({
       const editorMaxHeight =
         (appState.height - viewportY) / appState.zoom.value;
 
-      const { height: boundingHeight } = mathNode.getBoundingClientRect();
+      const { width: boundingWidth, height: boundingHeight } =
+        mathNode.getBoundingClientRect();
 
       let scaleY = 1;
+      let scaleX = 1;
 
-      if (boundingHeight < updatedMathElement.height) {
+      if (
+        boundingHeight < updatedMathElement.height &&
+        boundingWidth < updatedMathElement.width
+      ) {
         scaleY = updatedMathElement.height / boundingHeight;
+        scaleX = updatedMathElement.width / boundingWidth;
       }
 
       Object.assign(mathNode.style, {
@@ -68,7 +74,7 @@ export const mathWysiwyg = ({
         opacity: updatedMathElement.opacity / 100,
         filter: "var(--theme-filter)",
         maxHeight: `${editorMaxHeight}px`,
-        transform: element.latex && `scale(${scaleY})`,
+        transform: element.latex && `scale(${scaleX}, ${scaleY})`,
       });
 
       mutateElement(updatedMathElement, { x: coordX, y: coordY });
@@ -84,6 +90,7 @@ export const mathWysiwyg = ({
   const mathNode = tempNode.childNodes[0] as MathFieldElement;
 
   Object.assign(mathNode.style, {
+    fontSize: "26px",
     position: "absolute",
     display: "inline-block",
     minHeight: "1em",
