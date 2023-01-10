@@ -2799,6 +2799,8 @@ class App extends React.Component<AppProps, AppState> {
 
     const currentMathElement = existingMathImageElement
       ? newMathElement({
+          width: existingMathImageElement.width,
+          height: existingMathImageElement.height,
           x: existingMathImageElement.x,
           y: existingMathImageElement.y,
           strokeColor: existingMathImageElement.strokeColor,

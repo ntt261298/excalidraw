@@ -54,12 +54,21 @@ export const mathWysiwyg = ({
       const editorMaxHeight =
         (appState.height - viewportY) / appState.zoom.value;
 
+      const { height: boundingHeight } = mathNode.getBoundingClientRect();
+
+      let scaleY = 1;
+
+      if (boundingHeight) {
+        scaleY = updatedMathElement.height / boundingHeight;
+      }
+
       Object.assign(mathNode.style, {
         left: `${viewportX}px`,
         top: `${viewportY}px`,
         opacity: updatedMathElement.opacity / 100,
         filter: "var(--theme-filter)",
         maxHeight: `${editorMaxHeight}px`,
+        transform: element.latex && `scale(${scaleY})`,
       });
 
       mutateElement(updatedMathElement, { x: coordX, y: coordY });

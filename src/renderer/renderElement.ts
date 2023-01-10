@@ -303,7 +303,8 @@ const drawElementOnCanvas = (
         if (shouldTemporarilyAttach) {
           context.canvas.remove();
         }
-        // TODO: why type is always math whereas we chose another tool
+      } else if (isMathElement(element)) {
+        return;
       } else {
         throw new Error(`Unimplemented type ${element.type}`);
       }
