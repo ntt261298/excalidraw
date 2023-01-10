@@ -51,6 +51,11 @@ export const isMathElement = (
   return element != null && element.type === "math";
 };
 
+export const isMathImageElement = (
+  element: ExcalidrawElement | null,
+): element is ExcalidrawMathElement => {
+  return element != null && element.type === "image" && !!element.latex;
+};
 export const isFreeDrawElement = (
   element?: ExcalidrawElement | null,
 ): element is ExcalidrawFreeDrawElement => {

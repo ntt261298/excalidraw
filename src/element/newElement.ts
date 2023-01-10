@@ -166,31 +166,17 @@ export const newTextElement = (
 
 export const newMathElement = (
   opts: {
-    text: string;
-    fontSize: number;
-    fontFamily: FontFamilyValues;
-    textAlign: TextAlign;
-    verticalAlign: VerticalAlign;
+    latex: string;
     containerId?: ExcalidrawMathContainer["id"];
   } & ElementConstructorOpts,
 ): NonDeleted<ExcalidrawMathElement> => {
-  const metrics = measureText(opts.text, getFontString(opts));
-  const offsets = getTextElementPositionOffsets(opts, metrics);
   const mathElement = newElementWith(
     {
       ..._newElementBase<ExcalidrawMathElement>("math", opts),
-      text: opts.text,
-      fontSize: opts.fontSize,
-      fontFamily: opts.fontFamily,
-      textAlign: opts.textAlign,
-      verticalAlign: opts.verticalAlign,
-      x: opts.x - offsets.x,
-      y: opts.y - offsets.y,
-      width: metrics.width,
-      height: metrics.height,
-      baseline: metrics.baseline,
+      latex: opts.latex,
+      x: opts.x,
+      y: opts.y,
       containerId: opts.containerId || null,
-      originalText: opts.text,
     },
     {},
   );
@@ -199,7 +185,7 @@ export const newMathElement = (
 };
 
 const getAdjustedDimensions = (
-  element: ExcalidrawTextElement | ExcalidrawMathElement,
+  element: ExcalidrawTextElement,
   nextText: string,
 ): {
   x: number;
@@ -299,7 +285,7 @@ const getAdjustedDimensions = (
 };
 
 export const refreshTextDimensions = (
-  textElement: ExcalidrawTextElement | ExcalidrawMathElement,
+  textElement: ExcalidrawTextElement,
   text = textElement.text,
 ) => {
   const container = getContainerElement(textElement);
@@ -358,25 +344,6 @@ export const updateTextElement = (
     originalText: string;
   },
 ): ExcalidrawTextElement => {
-  return newElementWith(textElement, {
-    originalText,
-    isDeleted: isDeleted ?? textElement.isDeleted,
-    ...refreshTextDimensions(textElement, originalText),
-  });
-};
-
-export const updateMathElement = (
-  textElement: ExcalidrawMathElement,
-  {
-    text,
-    isDeleted,
-    originalText,
-  }: {
-    text: string;
-    isDeleted?: boolean;
-    originalText: string;
-  },
-): ExcalidrawMathElement => {
   return newElementWith(textElement, {
     originalText,
     isDeleted: isDeleted ?? textElement.isDeleted,

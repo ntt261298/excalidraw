@@ -142,14 +142,8 @@ export type ExcalidrawTextElement = _ExcalidrawElementBase &
 export type ExcalidrawMathElement = _ExcalidrawElementBase &
   Readonly<{
     type: "math";
-    fontSize: number;
-    fontFamily: FontFamilyValues;
-    text: string;
-    baseline: number;
-    textAlign: TextAlign;
-    verticalAlign: VerticalAlign;
+    latex: string;
     containerId: ExcalidrawGenericElement["id"] | null;
-    originalText: string;
   }>;
 
 export type ExcalidrawBindableElement =

@@ -124,7 +124,6 @@ import {
   deepCopyElement,
   newFreeDrawElement,
   newMathElement,
-  updateMathElement,
 } from "../element/newElement";
 import {
   hasBoundTextElement,
@@ -2444,32 +2443,13 @@ class App extends React.Component<AppProps, AppState> {
   }
 
   private handleMathWysiwyg(
-    element: ExcalidrawMathElement,
+    element: ExcalidrawMathElement | ExcalidrawImageElement,
     {
       isExistingElement = false,
     }: {
       isExistingElement?: boolean;
     },
   ) {
-    const updateElement = (
-      text: string,
-      originalText: string,
-      isDeleted: boolean,
-    ) => {
-      this.scene.replaceAllElements([
-        ...this.scene.getElementsIncludingDeleted().map((_element) => {
-          if (_element.id === element.id && isMathElement(_element)) {
-            return updateMathElement(_element, {
-              text,
-              isDeleted,
-              originalText,
-            });
-          }
-          return _element;
-        }),
-      ]);
-    };
-
     mathWysiwyg({
       id: element.id,
       canvas: this.canvas,
@@ -2545,10 +2525,6 @@ class App extends React.Component<AppProps, AppState> {
 
     // deselect all other elements when inserting text
     this.deselectElements();
-
-    // do an initial update to re-initialize element position since we were
-    // modifying element's x/y for sake of editor (case: syncing to remote)
-    updateElement(element.text, element.originalText, false);
   }
 
   private deselectElements() {
@@ -2800,42 +2776,73 @@ class App extends React.Component<AppProps, AppState> {
     // TODO: check for existing math element at position
     // Currently. this fn is only called when the user create a new math element
     // Create new math element
-    const element = newMathElement({
-      x: sceneX,
-      y: sceneY,
-      strokeColor: this.state.currentItemStrokeColor,
-      backgroundColor: this.state.currentItemBackgroundColor,
-      fillStyle: this.state.currentItemFillStyle,
-      strokeWidth: this.state.currentItemStrokeWidth,
-      strokeStyle: this.state.currentItemStrokeStyle,
-      roughness: this.state.currentItemRoughness,
-      opacity: this.state.currentItemOpacity,
-      roundness: null,
-      text: "",
-      fontSize: this.state.currentItemFontSize,
-      fontFamily: this.state.currentItemFontFamily,
-      textAlign: this.state.currentItemTextAlign,
-      verticalAlign: DEFAULT_VERTICAL_ALIGN,
-      containerId: undefined,
-      groupIds: container?.groupIds ?? [],
-      locked: false,
-    });
+    const selectedElements = getSelectedElements(
+      this.scene.getNonDeletedElements(),
+      this.state,
+    );
 
-    this.setState({ editingElement: element });
+    const existingMathImageElement =
+      selectedElements.length > 0 &&
+      selectedElements[0].type === "image" &&
+      selectedElements[0].latex
+        ? selectedElements[0]
+        : null;
+
+    const currentElements = this.scene.getElementsIncludingDeleted();
+
+    // Remove current math image if editing
+    const updatedElements = existingMathImageElement
+      ? currentElements.filter(
+          (element) => element.id !== existingMathImageElement.id,
+        )
+      : currentElements;
+
+    const currentMathElement = existingMathImageElement
+      ? newMathElement({
+          x: existingMathImageElement.x,
+          y: existingMathImageElement.y,
+          strokeColor: existingMathImageElement.strokeColor,
+          backgroundColor: existingMathImageElement.strokeColor,
+          fillStyle: existingMathImageElement.fillStyle,
+          strokeWidth: existingMathImageElement.strokeWidth,
+          strokeStyle: existingMathImageElement.strokeStyle,
+          roughness: existingMathImageElement.roughness,
+          opacity: existingMathImageElement.opacity,
+          roundness: null,
+          latex: existingMathImageElement.latex || "",
+          containerId: undefined,
+          groupIds: existingMathImageElement.groupIds,
+          locked: false,
+        })
+      : newMathElement({
+          x: sceneX,
+          y: sceneY,
+          strokeColor: this.state.currentItemStrokeColor,
+          backgroundColor: this.state.currentItemBackgroundColor,
+          fillStyle: this.state.currentItemFillStyle,
+          strokeWidth: this.state.currentItemStrokeWidth,
+          strokeStyle: this.state.currentItemStrokeStyle,
+          roughness: this.state.currentItemRoughness,
+          opacity: this.state.currentItemOpacity,
+          roundness: null,
+          latex: "",
+          containerId: undefined,
+          groupIds: container?.groupIds ?? [],
+          locked: false,
+        });
+
+    this.setState({ editingElement: currentMathElement });
 
     // In case of creating new math element, we add this element
     // to the scene
-    this.scene.replaceAllElements([
-      ...this.scene.getElementsIncludingDeleted(),
-      element,
-    ]);
+    this.scene.replaceAllElements([...updatedElements, currentMathElement]);
 
     this.setState({
-      editingElement: element,
+      editingElement: currentMathElement,
     });
 
-    this.handleMathWysiwyg(element, {
-      isExistingElement: false,
+    this.handleMathWysiwyg(currentMathElement, {
+      isExistingElement: !!existingMathImageElement,
     });
   };
 
@@ -2878,7 +2885,22 @@ class App extends React.Component<AppProps, AppState> {
         return;
       }
     }
-
+    if (
+      selectedElements.length === 1 &&
+      selectedElements[0].type === "image" &&
+      selectedElements[0].latex
+    ) {
+      this.setState({
+        editingElement: selectedElements[0],
+      });
+      // Trigger math editor
+      this.startMathEditing({
+        sceneX: 0,
+        sceneY: 0,
+        insertAtParentCenter: !event.altKey,
+      });
+      return;
+    }
     resetCursor(this.canvas);
 
     let { x: sceneX, y: sceneY } = viewportCoordsToSceneCoords(

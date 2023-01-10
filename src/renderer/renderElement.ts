@@ -262,7 +262,7 @@ const drawElementOnCanvas = (
       break;
     }
     default: {
-      if (isTextElement(element) || isMathElement(element)) {
+      if (isTextElement(element)) {
         const rtl = isRTL(element.text);
         const shouldTemporarilyAttach = rtl && !context.canvas.isConnected;
         if (shouldTemporarilyAttach) {

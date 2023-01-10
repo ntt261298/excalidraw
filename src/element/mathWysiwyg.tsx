@@ -1,8 +1,12 @@
 import { isWritableElement } from "../utils";
 import Scene from "../scene/Scene";
-import { isMathElement } from "./typeChecks";
+import { isMathElement, isMathImageElement } from "./typeChecks";
 import { CLASSES } from "../constants";
-import { ExcalidrawElement, ExcalidrawMathElement } from "./types";
+import {
+  ExcalidrawElement,
+  ExcalidrawImageElement,
+  ExcalidrawMathElement,
+} from "./types";
 import { mutateElement } from "./mutateElement";
 import App from "../components/App";
 
@@ -22,7 +26,7 @@ export const mathWysiwyg = ({
   id: ExcalidrawElement["id"];
   onSubmit: (data: { latex: string; coordX: number; coordY: number }) => void;
   getViewportCoords: (x: number, y: number) => [number, number];
-  element: ExcalidrawMathElement;
+  element: ExcalidrawMathElement | ExcalidrawImageElement;
   canvas: HTMLCanvasElement | null;
   excalidrawContainer: HTMLDivElement | null;
   app: App;
@@ -31,13 +35,17 @@ export const mathWysiwyg = ({
   let coordY = 0;
   const updateWysiwygStyle = () => {
     const appState = app.state;
-    const updatedMathElement = Scene.getScene(
-      element,
-    )?.getElement<ExcalidrawMathElement>(element.id);
+    const updatedMathElement = Scene.getScene(element)?.getElement<
+      ExcalidrawMathElement | ExcalidrawImageElement
+    >(element.id);
     if (!updatedMathElement) {
       return;
     }
-    if (updatedMathElement && isMathElement(updatedMathElement)) {
+    if (
+      updatedMathElement &&
+      (isMathElement(updatedMathElement) ||
+        isMathImageElement(updatedMathElement))
+    ) {
       coordX = updatedMathElement.x;
       coordY = updatedMathElement.y;
       // Set to element height by default since that's
@@ -59,7 +67,9 @@ export const mathWysiwyg = ({
   };
 
   // Create math field dom element
-  const mathFieldString = "<math-field></math-field>";
+  const mathFieldString = `<math-field>${
+    element ? element.latex : ""
+  }</math-field>`;
   const tempNode = document.createElement("div");
   tempNode.innerHTML = mathFieldString;
   const mathNode = tempNode.childNodes[0] as MathFieldElement;

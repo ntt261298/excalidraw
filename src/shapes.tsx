@@ -88,7 +88,7 @@ export const SHAPES = [
     icon: MathIcon,
     value: "math",
     key: KEYS.M,
-    numericKey: KEYS["10"],
+    numericKey: KEYS.M,
     fillable: false,
   },
 ] as const;
